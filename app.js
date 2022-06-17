@@ -7,27 +7,29 @@ const templateCarrito = document.getElementById('template-carrito').content
 const fragment = document.createDocumentFragment()
 let carrito = {}
 
-document.addEventListener('DOMContentLoaded', () => { 
+document.addEventListener('DOMContentLoaded', () => {
     fetchData()
     if (localStorage.getItem("carrito")) {
         carrito = JSON.parse(localStorage.getItem("carrito"))
         pintarCarrito()
     }
 });
-cards.addEventListener('click', e => {addCarrito(e) });
-items.addEventListener("click", e =>{
+cards.addEventListener('click', e => {
+    addCarrito(e)
+});
+items.addEventListener("click", e => {
     btnAccion(e)
 })
 
 const fetchData = async () => {
-    try{
-    const res = await fetch('api.json');
-    const data = await res.json()
-    console.log(data)
-    pintarCards(data)
-} catch(error){
-    console.log(error);
-}
+    try {
+        const res = await fetch('api.json');
+        const data = await res.json()
+       // console.log(data)
+        pintarCards(data)
+    } catch (error) {
+        console.log(error);
+    }
 }
 
 const pintarCards = data => {
@@ -47,7 +49,24 @@ const pintarCards = data => {
 const addCarrito = e => {
     //console.log(e.target);
     //console.log(e.target.classList.contains('btn-dark'));
-    if (e.target.classList.contains('btn-dark')){
+    Swal.fire({
+        title: 'Desea agregar al carrito?',
+        text: "Deseas agregar este producto?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Si, quiero'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire(
+                'Agregado!',
+                'El producto fue agregado',
+                'success'
+            )
+        }
+    })
+    if (e.target.classList.contains('btn-dark')) {
         setCarrito(e.target.parentElement)
     }
     e.stopPropagation()
@@ -60,21 +79,23 @@ const setCarrito = objeto => {
         title: objeto.querySelector("h5").textContent,
         precio: objeto.querySelector("p").textContent,
         cantidad: 1
-    } 
+    }
     //console.log(producto);
 
-    if(carrito.hasOwnProperty(producto.id)) {
+    if (carrito.hasOwnProperty(producto.id)) {
         producto.cantidad = carrito[producto.id].cantidad + 1
     }
 
-    carrito[producto.id] = {...producto}
+    carrito[producto.id] = {
+        ...producto
+    }
     pintarCarrito()
 }
 //console.log(carrito);
 
 const pintarCarrito = () => {
     items.innerHTML = ""
-    Object.values(carrito).forEach(producto =>{
+    Object.values(carrito).forEach(producto => {
         templateCarrito.querySelector("th").textContent = producto.id
         templateCarrito.querySelectorAll("td")[0].textContent = producto.title
         templateCarrito.querySelectorAll("td")[1].textContent = producto.cantidad
@@ -94,16 +115,21 @@ const pintarCarrito = () => {
 
 const pintarFooter = () => {
     footer.innerHTML = ""
-    if(Object.keys(carrito).length === 0) {
+    if (Object.keys(carrito).length === 0) {
         footer.innerHTML = `
         <th scope="row" colspan="5">Carrito vacío - comience a comprar!</th>
         `
         return
     }
 
-    const nCantidad = Object.values(carrito).reduce((acc, {cantidad}) => acc + cantidad, 0)
-    const nPrecio = Object.values(carrito).reduce((acc, {cantidad, precio}) => acc + cantidad * precio, 0)
-    
+    const nCantidad = Object.values(carrito).reduce((acc, {
+        cantidad
+    }) => acc + cantidad, 0)
+    const nPrecio = Object.values(carrito).reduce((acc, {
+        cantidad,
+        precio
+    }) => acc + cantidad * precio, 0)
+
     templateFooter.querySelectorAll("td")[0].textContent = nCantidad
     templateFooter.querySelector("span").textContent = nPrecio
 
@@ -113,31 +139,51 @@ const pintarFooter = () => {
 
     const btnVaciar = document.getElementById("vaciar-carrito")
     btnVaciar.addEventListener("click", () => {
-        carrito = {}
-        pintarCarrito()
+        Swal.fire({
+            title: 'Seguro desea vaciar el carrito?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, seguro',
+            cancelButtonText: 'No, no quiero'
+        }).then((result) => {
+
+            if (result.isConfirmed) {
+                carrito = {}
+                pintarCarrito()
+                Swal.fire({
+                    title: 'Borrado!',
+                    icon: 'success',
+                    text: 'El carrito ha sido vaciado'
+                })
+            }
+        })
+
     })
 }
 
 const btnAccion = e => {
     //console.log(e.target)
     //Accion de aumentar
-    if(e.target.classList.contains("btn-info")) {
+    if (e.target.classList.contains("btn-info")) {
         console.log(carrito[e.target.dataset.id])
 
-       // carrito[e.target.dataset.id]
+        // carrito[e.target.dataset.id]
         const producto = carrito[e.target.dataset.id]
         producto.cantidad++
-        carrito[e.target.dataset.id] = {...producto}
+        carrito[e.target.dataset.id] = {
+            ...producto
+        }
         pintarCarrito()
     }
 
-    if(e.target.classList.contains("btn-danger")){
+    if (e.target.classList.contains("btn-danger")) {
         const producto = carrito[e.target.dataset.id]
         producto.cantidad--
-        if(producto.cantidad ===0) {
+        if (producto.cantidad === 0) {
             delete carrito[e.target.dataset.id]
         }
         pintarCarrito()
     }
     e.stopPropagation()
 }
+
